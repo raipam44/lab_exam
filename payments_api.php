@@ -67,22 +67,46 @@ switch ($method) {
         ]);
         break;
 
-    case 'POST':
-        $data = json_decode(file_get_contents("php://input"), true);
-        if (
-            !empty($data['loan_id']) &&
-            isset($data['amount']) && is_numeric($data['amount']) &&
-            !empty($data['payment_date']) &&
-            !empty($data['payment_method']) && in_array($data['payment_method'], $validMethods)
-        ) {
-            $stmt = $pdo->prepare("INSERT INTO payments (loan_id, amount, payment_date, payment_method) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$data['loan_id'], $data['amount'], $data['payment_date'], $data['payment_method']]);
-            echo json_encode(["message" => "Payment recorded successfully!"]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["error" => "Invalid or missing payment data"]);
-        }
-        break;
+        case 'POST':
+            $data = json_decode(file_get_contents("php://input"), true);
+            if (
+                !empty($data['loan_id']) &&
+                isset($data['amount']) && is_numeric($data['amount']) && $data['amount'] > 0 &&
+                !empty($data['payment_date']) &&
+                !empty($data['payment_method']) && in_array($data['payment_method'], $validMethods)
+            ) {
+                // Look up the loan amount
+                $loanStmt = $pdo->prepare("SELECT amount FROM loans WHERE id = ?");
+                $loanStmt->execute([$data['loan_id']]);
+                $loan = $loanStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$loan) {
+                    http_response_code(404);
+                    echo json_encode(["error" => "Loan not found"]);
+                    break;
+                }
+
+                // Sum existing payments
+                $sumStmt = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) AS total_paid FROM payments WHERE loan_id = ?");
+                $sumStmt->execute([$data['loan_id']]);
+                $totalPaid = (float)$sumStmt->fetch(PDO::FETCH_ASSOC)['total_paid'];
+
+                $remaining = (float)$loan['amount'] - $totalPaid;
+
+                if ($data['amount'] > $remaining) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Payment exceeds remaining balance of $remaining"]);
+                    break;
+                }
+
+                $stmt = $pdo->prepare("INSERT INTO payments (loan_id, amount, payment_date, payment_method) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$data['loan_id'], $data['amount'], $data['payment_date'], $data['payment_method']]);
+                echo json_encode(["message" => "Payment recorded successfully!"]);
+            } else {
+                http_response_code(400);
+                echo json_encode(["error" => "Invalid or missing payment data"]);
+            }
+            break;
 
     case 'DELETE':
         $data = json_decode(file_get_contents("php://input"), true);

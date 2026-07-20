@@ -204,6 +204,24 @@
         loadLoans();
     };
 
+    document.getElementById("paymentForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const res = await fetch("payments_api.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                loan_id: currentLoan,
+                amount: document.getElementById("paymentAmount").value,
+                payment_date: document.getElementById("paymentDate").value,
+                payment_method: document.getElementById("paymentMethod").value
+            })
+        });
+        const result = await res.json();
+        if (result.error) alert(result.error);
+        document.getElementById("paymentForm").reset();
+        loadPayments();
+    };
+
     function openPayments(id) {
         currentLoan = id;
         document.getElementById("loanSection").style.display = "none";
@@ -215,11 +233,11 @@
         let res = await fetch(`payments_api.php?action=list&loan_id=${currentLoan}`);
         let data = await res.json();
         document.getElementById("totalPaid").innerText = data.total_paid;
-        document.getElementById("remaining").innerText = data.remaining;
+        document.getElementById("remaining").innerText = data.remaining_balance;
         let pTable = document.getElementById("paymentTable");
         pTable.innerHTML = "";
         data.payments.forEach(p => {
-            pTable.innerHTML += `<tr><td>${p.payment_date}</td><td>${p.payment_amount}</td><td>${p.payment_method}</td></tr>`;
+            pTable.innerHTML += `<tr><td>${p.payment_date}</td><td>${p.amount}</td><td>${p.payment_method}</td></tr>`;
         });
     }
 </script>
