@@ -212,7 +212,7 @@
     }
 
     async function loadPayments() {
-        let res = await fetch(`payments.php?action=list&loan_id=${currentLoan}`);
+        let res = await fetch(`payments_api.php?action=list&loan_id=${currentLoan}`);
         let data = await res.json();
         document.getElementById("totalPaid").innerText = data.total_paid;
         document.getElementById("remaining").innerText = data.remaining;
