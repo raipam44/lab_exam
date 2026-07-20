@@ -1,13 +1,13 @@
 <?php
 /**
  * Simple CRUD API for managing students in a school database.
- * 
+ *
  * This API supports the following operations:
  * - GET: Retrieve all students
  * - POST: Add a new student
  * - PUT: Update an existing student
  * - DELETE: Remove a student
- * 
+ *
  * The API returns JSON responses and handles CORS for cross-origin requests.
  */
 header("Content-Type: application/json");
@@ -16,8 +16,8 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Access-Control-Allow-Headers: Content-Type");
 
 $host = "db";
-$user = "root"; 
-$pass = "rootpassword"; 
+$user = "root";
+$pass = "rootpassword";
 $dbname = "school_db";
 
 try {
@@ -46,8 +46,8 @@ switch ($method) {
         if (!empty($data['name']) && !empty($data['email']) && !empty($data['course'])) {
             $stmt = $pdo->prepare("INSERT INTO students (name, email, course) VALUES (?, ?, ?)");
             $stmt->execute([
-                $data['name'], 
-                $data['email'], 
+                $data['name'],
+                $data['email'],
                 $data['course']
             ]);
             echo json_encode(["message" => "Student added successfully!"]);
@@ -62,9 +62,9 @@ switch ($method) {
         if (!empty($data['id']) && !empty($data['name']) && !empty($data['email']) && !empty($data['course'])) {
             $stmt = $pdo->prepare("UPDATE students SET name = ?, email = ?, course = ? WHERE id = ?");
             $stmt->execute([
-                $data['name'], 
-                $data['email'], 
-                $data['course'], 
+                $data['name'],
+                $data['email'],
+                $data['course'],
                 $data['id']
             ]);
             echo json_encode(["message" => "Student updated successfully!"]);
